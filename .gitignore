@@ -15,6 +15,7 @@ test_fpu_add
 test_fpu_mul
 test_fp_compare
 test_fp_compare64
+test_fpu_compare
 
 # scratch analyzer binaries
 analyze

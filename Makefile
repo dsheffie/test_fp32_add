@@ -30,10 +30,11 @@ FPU_ADD_EXE = test_fpu_add
 FPU_MUL_EXE = test_fpu_mul
 CMP_EXE = test_fp_compare
 CMP64_EXE = test_fp_compare64
+FPU_CMP_EXE = test_fpu_compare
 
 .PHONY : all clean
 
-all: $(EXE) $(MUL_EXE) $(ADD64_EXE) $(MUL64_EXE) $(FPU_ADD_EXE) $(FPU_MUL_EXE) $(CMP_EXE) $(CMP64_EXE)
+all: $(EXE) $(MUL_EXE) $(ADD64_EXE) $(MUL64_EXE) $(FPU_ADD_EXE) $(FPU_MUL_EXE) $(CMP_EXE) $(CMP64_EXE) $(FPU_CMP_EXE)
 
 $(EXE) : $(OBJ) obj_dir/Vfp_add__ALL.a
 	$(CXX) $(CXXFLAGS) -Wl,--start-group $(OBJ) obj_dir/*.o $(SOFTFLOAT_LIB) -Wl,--end-group $(EXTRA_LD) -lpthread -o $(EXE)
@@ -114,6 +115,17 @@ obj_cmp64/Vfp_compare__ALL.a : fp_compare.sv fp_compare.vh fp_special_cases.sv
 	$(VERILATOR) --top-module fp_compare -GW=64 --Mdir obj_cmp64 --x-assign unique -cc fp_compare.sv fp_special_cases.sv
 	$(MAKE) OPT_FAST="-O3 -flto" -C obj_cmp64 -f Vfp_compare.mk
 
+# unified single/double-precision comparator (fmt-selected)
+$(FPU_CMP_EXE) : afcmp.o verilated.o obj_fpu_cmp/Vfpu_compare__ALL.a
+	$(CXX) $(CXXFLAGS) -Wl,--start-group afcmp.o verilated.o obj_fpu_cmp/Vfpu_compare*.o $(SOFTFLOAT_LIB) -Wl,--end-group $(EXTRA_LD) -lpthread -o $(FPU_CMP_EXE)
+
+afcmp.o: analyze_fpu_cmp.cc obj_fpu_cmp/Vfpu_compare__ALL.a
+	$(CXX) $(CXXFLAGS) -Iobj_fpu_cmp -c $< -o $@
+
+obj_fpu_cmp/Vfpu_compare__ALL.a : fpu_compare.sv fp_compare.vh
+	$(VERILATOR) --top-module fpu_compare --Mdir obj_fpu_cmp --x-assign unique -cc fpu_compare.sv
+	$(MAKE) OPT_FAST="-O3 -flto" -C obj_fpu_cmp -f Vfpu_compare.mk
+
 top.o: top.cc obj_dir/Vfp_add__ALL.a
 	$(CXX) -MMD $(CXXFLAGS) -Iobj_dir -c $<
 
@@ -135,6 +147,6 @@ obj_dir/Vfp_add__ALL.a : $(SV_SRC)
 
 clean:
 	rm -rf $(EXE) $(MUL_EXE) $(ADD64_EXE) $(MUL64_EXE) $(FPU_ADD_EXE) $(FPU_MUL_EXE) \
-	  $(CMP_EXE) $(CMP64_EXE) $(OBJ) \
-	  analyze_mul.o analyze_mul.d a64_add.o a64_mul.o af_add.o af_mul.o acmp.o acmp64.o $(DEP) \
-	  obj_dir obj_mul obj_add64 obj_mul64 obj_fpu_add obj_fpu_mul obj_cmp obj_cmp64
+	  $(CMP_EXE) $(CMP64_EXE) $(FPU_CMP_EXE) $(OBJ) \
+	  analyze_mul.o analyze_mul.d a64_add.o a64_mul.o af_add.o af_mul.o acmp.o acmp64.o afcmp.o $(DEP) \
+	  obj_dir obj_mul obj_add64 obj_mul64 obj_fpu_add obj_fpu_mul obj_cmp obj_cmp64 obj_fpu_cmp
