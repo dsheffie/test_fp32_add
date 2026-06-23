@@ -1,0 +1,28 @@
+# Verilator output
+obj_*/
+
+# objects / deps / editor backups
+*.o
+*.d
+*~
+
+# built test executables (from the Makefile)
+test_fp_add
+test_fp_mul
+test_fp_add64
+test_fp_mul64
+test_fpu_add
+test_fpu_mul
+test_fp_compare
+test_fp_compare64
+
+# scratch analyzer binaries
+analyze
+analyze_mul
+analyze_cmp
+analyze_cmp64
+analyze_fpu
+analyze_fpu_add
+analyze_fpu_mul
+analyze_add64
+analyze_mul64
